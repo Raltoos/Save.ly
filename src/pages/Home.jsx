@@ -12,7 +12,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative w-screen flex flex-col items-center bg-gray-100 text-white overflow-hidden overflow-y-auto pb-20">
+    <div className="relative w-screen flex flex-col items-center bg-white text-white overflow-hidden overflow-y-auto pb-20">
       <div className="absolute bg-gradient-to-b from-[#429690] to-[#2A7C76] w-screen h-[250px] rounded-b-[20%] flex items-start justify-between p-5">
         <div className="flex flex-col">
           <p className="text-sm font-light">Good Evening,</p>

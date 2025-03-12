@@ -146,7 +146,7 @@ const Green = () => {
         </div>
       </div>
 
-      <div className="absolute mt-[6rem] w-screen bg-white rounded-t-[4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-y-auto">
+      <div className="absolute mt-[6rem] w-screen bg-white rounded-t-[4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-hidden overflow-y-auto">
         {/* Summary numbers */}
         <div className="flex justify-between w-full mb-6 mt-2">
           <div className="flex flex-col">
@@ -273,7 +273,7 @@ const Green = () => {
             <span className="text-xs text-[#429690] font-medium">See More</span>
           </div>
           
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <div className="bg-white rounded-xl p-4 border border-gray-100 pb-10 mb-10">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-medium text-sm">No-Shopping Weekend</h3>
               <span className="text-xs font-bold text-[#429690]">+500 Points</span>
