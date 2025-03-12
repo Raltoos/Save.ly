@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { addTransaction } from "../reducers/todoSlice";
 import SavingOptions from "../components/newTransaction/SavingOptions";
-import Categories from "../components/newTransaction/categories";
+import Categories from "../components/newTransaction/Categories";
 import { useDispatch } from "react-redux";
 
 const AddExpense = () => {
