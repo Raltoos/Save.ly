@@ -89,7 +89,7 @@ const Analytics = () => {
             className="text-3xl cursor-pointer"
             onClick={() => navigate("/app/home")}
           />
-          <p className="text-xl font-semibold">Statistics</p>
+          <p className="text-xl font-medium">Statistics</p>
           <BsThreeDots className="text-3xl" />
         </div>
       </div>

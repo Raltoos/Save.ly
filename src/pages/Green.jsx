@@ -134,7 +134,7 @@ const Green = () => {
   const COLORS = ['#429690', '#2A7C76', '#1D5C57', '#5DB5AF', '#70C5BF'];
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-100 overflow-hidden overflow-y-auto pb-24">
+    <div className="w-full h-full flex flex-col overflow-hidden overflow-y-auto pb-24 items-center">
       <div className="relative top-0 z-10 bg-gradient-to-b from-[#429690] to-[#2A7C76] w-full h-[150px] text-white flex items-start py-[2rem] px-4">
         <div className="flex justify-between items-center w-full h-[85%]">
           <MdOutlineKeyboardArrowLeft
@@ -146,7 +146,7 @@ const Green = () => {
         </div>
       </div>
 
-      <div className="absolute mt-[8rem] w-screen bg-white rounded-t-[1.4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-hidden overflow-y-auto">
+      <div className="absolute mt-[8rem] max-w-[900px] w-screen bg-white rounded-t-[1.4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-hidden overflow-y-auto items-center shadow-lg">
         {/* Summary numbers */}
         <div className="flex justify-between w-full mb-6 mt-2">
           <div className="flex flex-col">
@@ -161,7 +161,7 @@ const Green = () => {
         </div>
 
         {/* Environmental Impact Summary Card */}
-        <div className="w-full bg-gradient-to-r from-[#429690] to-[#2A7C76] rounded-xl p-4 text-white mb-6">
+        <div className="max-w-[400px] w-full bg-gradient-to-r from-[#429690] to-[#2A7C76] rounded-xl p-4 text-white mb-6">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-lg font-semibold mb-1">Your Green Impact</h2>
