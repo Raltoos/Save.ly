@@ -9,6 +9,7 @@ const Home = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("month");
   const [total, setTotal] = useState(0);
   const [savings, setSavings] = useState(0);
+  const [carbon, setCarbon] = useState(0);
   const navigate = useNavigate();
 
   return (
@@ -26,11 +27,12 @@ const Home = () => {
       <StatsCard
         total={total}
         savings={savings}
+        carbon={carbon}
         selectedPeriod={selectedPeriod}
         setSelectedPeriod={setSelectedPeriod}
       />
 
-      <TrxHistory setTotal={setTotal} selectedPeriod={selectedPeriod} setSavings={setSavings}/>
+      <TrxHistory setTotal={setTotal} selectedPeriod={selectedPeriod} setSavings={setSavings} setCarbon={setCarbon}/>
 
       <button className="fixed bottom-16 p-4 bg-[#2F7E79] rounded-full text-2xl" onClick={()=>navigate('/app/QRScan')}>
         <MdOutlineQrCodeScanner />

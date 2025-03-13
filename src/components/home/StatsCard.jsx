@@ -5,7 +5,7 @@ import {
   FaCalendar,
 } from "react-icons/fa";
 
-const StatsCard = ({total, selectedPeriod, setSelectedPeriod, savings}) => {
+const StatsCard = ({total, selectedPeriod, setSelectedPeriod, savings, carbon}) => {
   const periodLabels = {
     year: "This Year",
     month: "This Month",
@@ -52,7 +52,7 @@ const StatsCard = ({total, selectedPeriod, setSelectedPeriod, savings}) => {
         </div>
         <div className="flex flex-col">
           <p className="text-sm opacity-80">Carbon Footprint</p>
-          <p className="text-xl font-semibold">332.4</p>
+          <p className="text-xl font-semibold">{carbon} Kg</p>
         </div>
       </div>
     </div>

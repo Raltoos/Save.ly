@@ -11,7 +11,7 @@ import {
 import { MdHome } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
-const TrxHistory = ({ setTotal, selectedPeriod, setSavings }) => {
+const TrxHistory = ({ setTotal, selectedPeriod, setSavings, setCarbon }) => {
   const navigate = useNavigate();
 
   const [fullList, setFullList] = useState(false);
@@ -69,6 +69,26 @@ const TrxHistory = ({ setTotal, selectedPeriod, setSavings }) => {
       total += Number(element.amount);
       saving += Number(element.savingAmount)
     });
+    let carbon = 0;
+    filteredTransactions.forEach(transaction => {
+      switch (transaction.category) {
+        case "Food & Dining":
+          carbon += transaction.amount * 0.0002; // kg CO2 per rupee
+          break;
+        case "Transport":
+          carbon += transaction.amount * 0.0005; 
+          break;
+        case "Shopping":
+          carbon += transaction.amount * 0.0003;
+          break;
+        case "Household":
+          carbon += transaction.amount * 0.0004;
+          break;
+        default:
+          carbon += transaction.amount * 0.0001;
+      }
+    });
+    setCarbon(Math.round(carbon));
     setTotal(total);
     setSavings(saving);
   }, [filteredTransactions, setTotal]);

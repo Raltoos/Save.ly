@@ -136,7 +136,7 @@ const Green = () => {
   return (
     <div className="w-full h-full flex flex-col bg-gray-100 overflow-hidden overflow-y-auto pb-24">
       <div className="relative top-0 z-10 bg-gradient-to-b from-[#429690] to-[#2A7C76] w-full h-[150px] text-white flex items-start py-[2rem] px-4">
-        <div className="flex justify-between items-center w-full">
+        <div className="flex justify-between items-center w-full h-[85%]">
           <MdOutlineKeyboardArrowLeft
             className="text-3xl cursor-pointer"
             onClick={() => navigate("/app/home")}
@@ -146,7 +146,7 @@ const Green = () => {
         </div>
       </div>
 
-      <div className="absolute mt-[6rem] w-screen bg-white rounded-t-[4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-hidden overflow-y-auto">
+      <div className="absolute mt-[8rem] w-screen bg-white rounded-t-[1.4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-hidden overflow-y-auto">
         {/* Summary numbers */}
         <div className="flex justify-between w-full mb-6 mt-2">
           <div className="flex flex-col">
