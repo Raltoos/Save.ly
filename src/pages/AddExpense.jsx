@@ -53,10 +53,10 @@ const AddExpense = () => {
     dispatch(
       addTransaction({
         transaction_title: name,
-        amount: amount,
+        amount: parseFloat(amount), // ensure this is a number
         category: category,
         savingOption: savingsType,
-        savingAmount: savingsValue,
+        savingAmount: parseFloat(calculatedSavings), // dispatch the computed savings
       })
     );
 
