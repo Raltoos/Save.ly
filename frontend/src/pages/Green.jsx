@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { MdOutlineKeyboardArrowLeft } from "react-icons/md";
-import { BsThreeDots } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { MdOutlineKeyboardArrowLeft } from "react-icons/md";
+import { BsThreeDots } from "react-icons/bs";
 import { FaLeaf, FaSeedling, FaRecycle, FaTree } from "react-icons/fa";
 import { IoEarth } from "react-icons/io5";
 import {
@@ -18,88 +18,137 @@ import {
   CartesianGrid,
 } from "recharts";
 
+// ==================================================
+// LOADER COMPONENT (PARTIAL LOADER FOR GREEN STOCKS)
+// ==================================================
+const Loader = () => {
+  // A simple rotating loader ring using Tailwind
+  // You can customize size, colors, etc.
+  return (
+    <div className="flex items-center justify-center p-8">
+      <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+};
+
+// Endpoint for fetching green stocks
+const GREEN_STOCKS_API = "http://localhost:5050/api/greenstocks";
+
 const Green = () => {
   const navigate = useNavigate();
   const transactions = useSelector((state) => state.trxns.transactions);
+
+  // Loader state just for green stocks section
+  const [loadingGreenStocks, setLoadingGreenStocks] = useState(true);
+
+  // The array of green stocks
+  const [greenStocks, setGreenStocks] = useState([]);
+
+  // Other states (analytics, etc.)
   const [totalSavings, setTotalSavings] = useState(0);
   const [carbonFootprint, setCarbonFootprint] = useState(0);
   const [savingsByCategory, setSavingsByCategory] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
-  // New state to hold the computed number of trees that can be planted
   const [trees, setTrees] = useState(0);
-  // New state to hold the estimated CO₂ offset from planted trees
   const [offsetCO2, setOffsetCO2] = useState(0);
 
+  // ================================================
+  // 1) On mount, check localStorage for greenStocks.
+  //    If absent, fetch from API. Then set loading false.
+  // ================================================
   useEffect(() => {
-    // Calculate total savings from all transactions
-    const savings = transactions.reduce((total, transaction) => {
-      return total + transaction.savingAmount;
-    }, 0);
+    const localData = localStorage.getItem("greenStocks");
+    if (localData) {
+      console.log("Loaded green stocks from localStorage");
+      setGreenStocks(JSON.parse(localData));
+      setLoadingGreenStocks(false);
+    } else {
+      console.log("No local greenStocks found, fetching from API...");
+      fetch(GREEN_STOCKS_API)
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch green stocks");
+          return res.json();
+        })
+        .then((data) => {
+          // data => { status: "success", data: { green_stocks: [...] } }
+          if (data.status === "success" && data.data?.green_stocks) {
+            const stocksArray = data.data.green_stocks;
+            // Save to localStorage
+            localStorage.setItem("greenStocks", JSON.stringify(stocksArray));
+            // Update state
+            setGreenStocks(stocksArray);
+          } else {
+            console.error("API returned unexpected data:", data);
+          }
+          // Done loading either way
+          setLoadingGreenStocks(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching green stocks:", error);
+          setLoadingGreenStocks(false);
+        });
+    }
+  }, []);
+
+  // ================================================
+  // 2) Whenever transactions change, recalc totals
+  // ================================================
+  useEffect(() => {
+    const savings = transactions.reduce(
+      (total, t) => total + t.savingAmount,
+      0
+    );
     setTotalSavings(savings);
 
-    // Improved Tree Conversion:
-    // Assume an average cost of ₹750 per tree, which can offset about 21 kg CO₂ per year.
     const treeCost = 750;
     const computedTrees = Math.floor(savings / treeCost);
     setTrees(computedTrees);
     setOffsetCO2(computedTrees * 21);
 
-    // Improved Carbon Footprint Calculation:
-    // Updated conversion factors (kg CO₂ per rupee) based on refined estimates:
-    // - Food & Dining: 0.00025
-    // - Transport: 0.00065
-    // - Shopping: 0.00035
-    // - Household: 0.00050
-    // - Default: 0.00020
     let carbon = 0;
-    transactions.forEach((transaction) => {
-      const amount = transaction.amount;
-      switch (transaction.category) {
+    transactions.forEach((t) => {
+      switch (t.category) {
         case "Food & Dining":
-          carbon += amount * 0.00025;
+          carbon += t.amount * 0.00025;
           break;
         case "Transport":
-          carbon += amount * 0.00065;
+          carbon += t.amount * 0.00065;
           break;
         case "Shopping":
-          carbon += amount * 0.00035;
+          carbon += t.amount * 0.00035;
           break;
         case "Household":
-          carbon += amount * 0.0005;
+          carbon += t.amount * 0.0005;
           break;
         default:
-          carbon += amount * 0.0002;
+          carbon += t.amount * 0.0002;
       }
     });
     setCarbonFootprint(Math.round(carbon));
 
-    // Calculate savings by category for the pie chart
     const categorySavings = {};
-    transactions.forEach((transaction) => {
-      if (!categorySavings[transaction.category]) {
-        categorySavings[transaction.category] = 0;
+    transactions.forEach((t) => {
+      if (!categorySavings[t.category]) {
+        categorySavings[t.category] = 0;
       }
-      categorySavings[transaction.category] += transaction.savingAmount;
+      categorySavings[t.category] += t.savingAmount;
     });
-    const categoryData = Object.keys(categorySavings).map((category) => ({
-      name: category,
-      value: categorySavings[category],
+    const categoryData = Object.keys(categorySavings).map((cat) => ({
+      name: cat,
+      value: categorySavings[cat],
     }));
     setSavingsByCategory(categoryData);
 
-    // Prepare monthly savings data for the line chart
     const months = {};
-    transactions.forEach((transaction) => {
-      const month = transaction.date.substring(0, 7); // YYYY-MM
-      if (!months[month]) {
-        months[month] = 0;
-      }
-      months[month] += transaction.savingAmount;
+    transactions.forEach((t) => {
+      const month = t.date.substring(0, 7);
+      if (!months[month]) months[month] = 0;
+      months[month] += t.savingAmount;
     });
     const monthlyTrend = Object.keys(months)
       .sort()
-      .map((month) => {
-        const [year, monthNum] = month.split("-");
+      .map((m) => {
+        const [year, monthNum] = m.split("-");
         const monthNames = [
           "Jan",
           "Feb",
@@ -116,72 +165,21 @@ const Green = () => {
         ];
         return {
           month: monthNames[parseInt(monthNum) - 1],
-          savings: months[month],
+          savings: months[m],
         };
       });
     setMonthlyData(monthlyTrend);
   }, [transactions]);
 
-  // Mock data for green investment options
-  const greenStocks = [
-    {
-      id: 1,
-      name: "EcoSolar Inc.",
-      ticker: "ESOL",
-      return: "+12.8%",
-      impact: "Reduced 1.2M tons CO₂",
-      description: "Leading solar panel manufacturer",
-      color: "#429690",
-    },
-    {
-      id: 2,
-      name: "WindPower Global",
-      ticker: "WIND",
-      return: "+8.6%",
-      impact: "Carbon negative operations",
-      description: "Offshore wind farm development",
-      color: "#30706A",
-    },
-    {
-      id: 3,
-      name: "GreenTech Solutions",
-      ticker: "GTEC",
-      return: "+15.2%",
-      impact: "Saved 800K tons CO₂",
-      description: "Sustainable technology innovation",
-      color: "#2A7C76",
-    },
-  ];
-
-  // Mock data for financial tips
-  const financialTips = [
-    {
-      id: 1,
-      title: "Round-Up Savings Strategy",
-      description:
-        "Enable round-ups on all transactions to save an extra ₹3000 yearly without noticing.",
-      icon: <FaSeedling className="text-2xl text-[#429690]" />,
-    },
-    {
-      id: 2,
-      title: "Carbon Offset Investing",
-      description:
-        "Invest 2% of your savings in carbon offset projects for maximum environmental impact.",
-      icon: <IoEarth className="text-2xl text-[#429690]" />,
-    },
-    {
-      id: 3,
-      title: "Green Daily Habits",
-      description:
-        "Small changes like reusable bottles can save ₹5000 yearly and reduce your carbon footprint.",
-      icon: <FaLeaf className="text-2xl text-[#429690]" />,
-    },
-  ];
-
+  // Chart colors
   const COLORS = ["#429690", "#2A7C76", "#1D5C57", "#5DB5AF", "#70C5BF"];
 
+  // ================================================
+  //              RENDER COMPONENT
+  // ================================================
   return (
     <div className="w-full h-full flex flex-col overflow-hidden overflow-y-auto pb-24 items-center">
+      {/* ====== HEADER ====== */}
       <div className="relative top-0 z-10 bg-gradient-to-b from-[#429690] to-[#2A7C76] w-full h-[150px] text-white flex items-start py-[2rem] px-4">
         <div className="flex justify-between items-center w-full h-[85%]">
           <MdOutlineKeyboardArrowLeft
@@ -193,8 +191,9 @@ const Green = () => {
         </div>
       </div>
 
+      {/* ====== CONTENT WRAPPER ====== */}
       <div className="absolute mt-[8rem] max-w-[900px] w-screen bg-white rounded-t-[1.4rem] z-10 flex flex-col px-4 pt-6 flex-grow overflow-hidden overflow-y-auto items-center shadow-lg">
-        {/* Summary numbers */}
+        {/* ====== SUMMARY SECTION ====== */}
         <div className="flex justify-between w-full mb-6 mt-2">
           <div className="flex flex-col">
             <span className="text-gray-500 font-normal text-sm">
@@ -204,7 +203,6 @@ const Green = () => {
               ₹ {totalSavings}
             </span>
           </div>
-
           <div className="flex flex-col items-end">
             <span className="text-gray-500 font-normal text-sm">
               Carbon Footprint
@@ -215,7 +213,7 @@ const Green = () => {
           </div>
         </div>
 
-        {/* Environmental Impact Summary Card */}
+        {/* ====== GREEN IMPACT CARD ====== */}
         <div className="max-w-[400px] w-full bg-gradient-to-r from-[#429690] to-[#2A7C76] rounded-xl p-4 text-white mb-6">
           <div className="flex justify-between items-center">
             <div>
@@ -224,7 +222,6 @@ const Green = () => {
                 Based on your current savings
               </p>
               <div className="mt-3">
-                {/* Display computed number of trees and their CO₂ offset potential */}
                 <p className="text-xl font-bold">{trees} Trees</p>
                 <p className="text-xs">Offset ~{offsetCO2} Kg CO₂/year</p>
               </div>
@@ -233,12 +230,12 @@ const Green = () => {
               <FaRecycle className="text-2xl" />
             </div>
           </div>
-
           <button className="w-full bg-white text-[#429690] py-2 rounded-lg mt-3 font-semibold text-sm">
             Increase Your Impact
           </button>
         </div>
 
+        {/* ====== SAVINGS IMPACT CHARTS ====== */}
         <div className="w-full bg-gray-50 rounded-xl p-3 mb-5 shadow-sm">
           <h2 className="text-base font-semibold text-[#2A7C76] mb-2">
             Your Savings Impact
@@ -266,7 +263,6 @@ const Green = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-
           <h3 className="text-sm font-medium text-[#2A7C76] mb-2">
             Monthly Savings Trend
           </h3>
@@ -296,6 +292,7 @@ const Green = () => {
           </div>
         </div>
 
+        {/* ====== GREEN STOCKS SECTION ====== */}
         <div className="w-full mb-5">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-base font-semibold text-[#2A7C76]">
@@ -303,41 +300,74 @@ const Green = () => {
             </h2>
             <span className="text-xs text-[#429690] font-medium">View All</span>
           </div>
+
+          {/* Only show loader for green stocks area */}
           <div className="space-y-3">
-            {greenStocks.map((stock) => (
-              <div
-                key={stock.id}
-                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex justify-between items-center"
-              >
-                <div className="flex items-center space-x-3">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: stock.color }}
-                  >
-                    <FaTree className="text-white text-sm" />
+            {loadingGreenStocks ? (
+              <Loader />
+            ) : Array.isArray(greenStocks) ? (
+              greenStocks.map((stock) => (
+                <div
+                  key={stock.id}
+                  className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex justify-between items-center"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: stock.color }}
+                    >
+                      <FaTree className="text-white text-sm" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-sm">{stock.name}</h3>
+                      <p className="text-xs text-gray-500">
+                        {stock.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-sm">{stock.name}</h3>
-                    <p className="text-xs text-gray-500">{stock.description}</p>
+                  <div className="text-right">
+                    <p className="font-semibold text-sm text-[#429690]">
+                      {stock.return}
+                    </p>
+                    <p className="text-xs text-gray-500">{stock.impact}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-sm text-[#429690]">
-                    {stock.return}
-                  </p>
-                  <p className="text-xs text-gray-500">{stock.impact}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No green stocks available</p>
+            )}
           </div>
         </div>
 
+        {/* ====== SMART MONEY TIPS ====== */}
         <div className="w-full mb-6">
           <h2 className="text-base font-semibold text-[#2A7C76] mb-3">
             Smart Money Tips
           </h2>
           <div className="space-y-3">
-            {financialTips.map((tip) => (
+            {[
+              {
+                id: 1,
+                title: "Round-Up Savings Strategy",
+                description:
+                  "Enable round-ups on all transactions to save an extra ₹3000 yearly without noticing.",
+                icon: <FaSeedling className="text-2xl text-[#429690]" />,
+              },
+              {
+                id: 2,
+                title: "Carbon Offset Investing",
+                description:
+                  "Invest 2% of your savings in carbon offset projects for maximum environmental impact.",
+                icon: <IoEarth className="text-2xl text-[#429690]" />,
+              },
+              {
+                id: 3,
+                title: "Green Daily Habits",
+                description:
+                  "Small changes like reusable bottles can save ₹5000 yearly and reduce your carbon footprint.",
+                icon: <FaLeaf className="text-2xl text-[#429690]" />,
+              },
+            ].map((tip) => (
               <div
                 key={tip.id}
                 className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
@@ -360,6 +390,7 @@ const Green = () => {
           </div>
         </div>
 
+        {/* ====== WEEKLY CHALLENGES ====== */}
         <div className="w-full mb-10">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-base font-semibold text-[#2A7C76]">

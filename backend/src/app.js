@@ -7,6 +7,7 @@ const connectDB = require("./config/db");
 // const speechServiceRoutes = require("./routes/speechServiceRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const greenStockRoutes = require("./routes/greenStocksRoutes");
 
 dotenv.config(); // Load environment variables
 
@@ -25,6 +26,7 @@ app.use(express.json());
 // Define application routes
 app.use("/api/auth", authRoutes); // Authentication routes
 app.use("/api/users", userRoutes); // User-related routes
+app.use("/api/greenstocks", greenStockRoutes);
 
 // Health Check Route
 app.get("/", (req, res) => {
