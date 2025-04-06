@@ -26,7 +26,7 @@ app.use(express.json());
 // Define application routes
 app.use("/api/auth", authRoutes); // Authentication routes
 app.use("/api/users", userRoutes); // User-related routes
-app.use("/api/greenstocks", greenStockRoutes);
+app.use("/api/eco", greenStockRoutes);
 
 // Health Check Route
 app.get("/", (req, res) => {

@@ -1,10 +1,51 @@
 const OpenAI = require("openai");
 require("dotenv").config();
 
-// Initialize the OpenAI client using the API key from your environment
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const getPersonalizedTips = async (req, res) => {
+  try {
+    const { transactions } = req.body;
+
+    if (!transactions || typeof transactions !== "string") {
+      return res.status(400).json({
+        status: "fail",
+        message: "Please provide a valid string of transactions.",
+      });
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: `You are a green finance assistant. Based on the following user transactions: \n${transactions}\n\nGive 3 personalized green finance tips as a JSON array of objects, each with:
+- id (number)
+- title (string)
+- description (string)
+
+Don't include icon components, we will render them on frontend.`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    const parsedTips = JSON.parse(content);
+
+    res.status(200).json({
+      status: "success",
+      data: parsedTips,
+    });
+  } catch (error) {
+    console.error("Error generating personalized tips:", error.message);
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
 
 const getGreenStocks = async (req, res) => {
   try {
@@ -38,4 +79,4 @@ const getGreenStocks = async (req, res) => {
   }
 };
 
-module.exports = { getGreenStocks };
+module.exports = { getGreenStocks, getPersonalizedTips };

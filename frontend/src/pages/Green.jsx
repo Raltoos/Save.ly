@@ -18,33 +18,116 @@ import {
   CartesianGrid,
 } from "recharts";
 
-// ==================================================
-// LOADER COMPONENT (PARTIAL LOADER FOR GREEN STOCKS)
-// ==================================================
-const Loader = () => {
-  // A simple rotating loader ring using Tailwind
-  // You can customize size, colors, etc.
-  return (
-    <div className="flex items-center justify-center p-8">
-      <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-};
+// Loader component
+const Loader = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
-// Endpoint for fetching green stocks
-const GREEN_STOCKS_API = "http://localhost:5050/api/greenstocks";
+// Dummy data
+const dummyTips = [
+  {
+    id: 1,
+    title: "Round-Up Savings Strategy",
+    description:
+      "Enable round-ups on all transactions to save an extra ₹3000 yearly without noticing.",
+  },
+  {
+    id: 2,
+    title: "Carbon Offset Investing",
+    description:
+      "Invest 2% of your savings in carbon offset projects for maximum environmental impact.",
+  },
+  {
+    id: 3,
+    title: "Green Daily Habits",
+    description:
+      "Small changes like reusable bottles can save ₹5000 yearly and reduce your carbon footprint.",
+  },
+];
+
+const dummyStocks = [
+  {
+    id: 1,
+    name: "ReNew Power",
+    ticker: "RENEW",
+    return: "+12.3%",
+    impact: "High Wind & Solar Reach",
+    description:
+      "India’s largest renewable energy IPP with over 13 GW portfolio.",
+    color: "#429690",
+  },
+  {
+    id: 2,
+    name: "Tata Power Green",
+    ticker: "TATAPWR",
+    return: "+9.8%",
+    impact: "EV Charging & Solar Grids",
+    description:
+      "Tata’s green energy arm expanding solar and EV infrastructure.",
+    color: "#2A7C76",
+  },
+  {
+    id: 3,
+    name: "Adani Green",
+    ticker: "ADANIGREEN",
+    return: "+15.6%",
+    impact: "Solar Capacity Leader",
+    description: "One of India’s biggest solar project developers.",
+    color: "#30706A",
+  },
+];
+
+// API endpoints
+const GREEN_STOCKS_API = "http://localhost:5050/api/eco/green-stocks";
+const TIPS_API = "http://localhost:5050/api/eco/personalized-tips";
+
+const fetchTips = async (setTips, setLoadingTips) => {
+  const localCache = localStorage.getItem("greenTips");
+
+  if (localCache) {
+    const parsed = JSON.parse(localCache);
+    console.log("Loaded tips from localStorage");
+    setTips(parsed);
+    setLoadingTips(false);
+    return;
+  }
+
+  const localTxns = JSON.parse(localStorage.getItem("transactions")) || [];
+
+  try {
+    const res = await fetch(TIPS_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transactions: JSON.stringify(localTxns) }),
+    });
+
+    const result = await res.json();
+    if (result.status === "success") {
+      const tips = result.data.tips || result.data;
+      console.log("Fetched fresh tips:", tips);
+      setTips(tips);
+      localStorage.setItem("greenTips", JSON.stringify(tips));
+    } else {
+      console.warn("Unexpected response from tips API, using dummy tips.");
+      setTips(dummyTips);
+    }
+  } catch (err) {
+    console.error("Failed to fetch personalized tips, using fallback.");
+    setTips(dummyTips);
+  } finally {
+    setLoadingTips(false);
+  }
+};
 
 const Green = () => {
   const navigate = useNavigate();
   const transactions = useSelector((state) => state.trxns.transactions);
-
-  // Loader state just for green stocks section
   const [loadingGreenStocks, setLoadingGreenStocks] = useState(true);
-
-  // The array of green stocks
+  const [tips, setTips] = useState([]);
+  const [loadingTips, setLoadingTips] = useState(true);
   const [greenStocks, setGreenStocks] = useState([]);
-
-  // Other states (analytics, etc.)
   const [totalSavings, setTotalSavings] = useState(0);
   const [carbonFootprint, setCarbonFootprint] = useState(0);
   const [savingsByCategory, setSavingsByCategory] = useState([]);
@@ -52,10 +135,10 @@ const Green = () => {
   const [trees, setTrees] = useState(0);
   const [offsetCO2, setOffsetCO2] = useState(0);
 
-  // ================================================
-  // 1) On mount, check localStorage for greenStocks.
-  //    If absent, fetch from API. Then set loading false.
-  // ================================================
+  useEffect(() => {
+    fetchTips(setTips, setLoadingTips);
+  }, []);
+
   useEffect(() => {
     const localData = localStorage.getItem("greenStocks");
     if (localData) {
@@ -65,34 +148,25 @@ const Green = () => {
     } else {
       console.log("No local greenStocks found, fetching from API...");
       fetch(GREEN_STOCKS_API)
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch green stocks");
-          return res.json();
-        })
+        .then((res) => res.json())
         .then((data) => {
-          // data => { status: "success", data: { green_stocks: [...] } }
           if (data.status === "success" && data.data?.green_stocks) {
             const stocksArray = data.data.green_stocks;
-            // Save to localStorage
             localStorage.setItem("greenStocks", JSON.stringify(stocksArray));
-            // Update state
             setGreenStocks(stocksArray);
           } else {
-            console.error("API returned unexpected data:", data);
+            console.warn("Unexpected response format, using dummy stocks.");
+            setGreenStocks(dummyStocks);
           }
-          // Done loading either way
-          setLoadingGreenStocks(false);
         })
         .catch((error) => {
-          console.error("Error fetching green stocks:", error);
-          setLoadingGreenStocks(false);
-        });
+          console.error("Error fetching green stocks, using fallback:", error);
+          setGreenStocks(dummyStocks);
+        })
+        .finally(() => setLoadingGreenStocks(false));
     }
   }, []);
 
-  // ================================================
-  // 2) Whenever transactions change, recalc totals
-  // ================================================
   useEffect(() => {
     const savings = transactions.reduce(
       (total, t) => total + t.savingAmount,
@@ -128,55 +202,53 @@ const Green = () => {
 
     const categorySavings = {};
     transactions.forEach((t) => {
-      if (!categorySavings[t.category]) {
-        categorySavings[t.category] = 0;
-      }
-      categorySavings[t.category] += t.savingAmount;
+      categorySavings[t.category] =
+        (categorySavings[t.category] || 0) + t.savingAmount;
     });
-    const categoryData = Object.keys(categorySavings).map((cat) => ({
-      name: cat,
-      value: categorySavings[cat],
-    }));
-    setSavingsByCategory(categoryData);
+    setSavingsByCategory(
+      Object.entries(categorySavings).map(([name, value]) => ({ name, value }))
+    );
 
     const months = {};
     transactions.forEach((t) => {
       const month = t.date.substring(0, 7);
-      if (!months[month]) months[month] = 0;
-      months[month] += t.savingAmount;
+      months[month] = (months[month] || 0) + t.savingAmount;
     });
-    const monthlyTrend = Object.keys(months)
-      .sort()
-      .map((m) => {
-        const [year, monthNum] = m.split("-");
-        const monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        return {
-          month: monthNames[parseInt(monthNum) - 1],
-          savings: months[m],
-        };
-      });
-    setMonthlyData(monthlyTrend);
+    setMonthlyData(
+      Object.keys(months)
+        .sort()
+        .map((m) => {
+          const [_, monthNum] = m.split("-");
+          const monthNames = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+          return {
+            month: monthNames[parseInt(monthNum) - 1],
+            savings: months[m],
+          };
+        })
+    );
   }, [transactions]);
 
-  // Chart colors
   const COLORS = ["#429690", "#2A7C76", "#1D5C57", "#5DB5AF", "#70C5BF"];
 
-  // ================================================
-  //              RENDER COMPONENT
-  // ================================================
+  const renderTipIcon = (id) => {
+    if (id === 1) return <FaSeedling className="text-2xl text-[#429690]" />;
+    if (id === 2) return <IoEarth className="text-2xl text-[#429690]" />;
+    return <FaLeaf className="text-2xl text-[#429690]" />;
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden overflow-y-auto pb-24 items-center">
       {/* ====== HEADER ====== */}
@@ -345,48 +417,40 @@ const Green = () => {
             Smart Money Tips
           </h2>
           <div className="space-y-3">
-            {[
-              {
-                id: 1,
-                title: "Round-Up Savings Strategy",
-                description:
-                  "Enable round-ups on all transactions to save an extra ₹3000 yearly without noticing.",
-                icon: <FaSeedling className="text-2xl text-[#429690]" />,
-              },
-              {
-                id: 2,
-                title: "Carbon Offset Investing",
-                description:
-                  "Invest 2% of your savings in carbon offset projects for maximum environmental impact.",
-                icon: <IoEarth className="text-2xl text-[#429690]" />,
-              },
-              {
-                id: 3,
-                title: "Green Daily Habits",
-                description:
-                  "Small changes like reusable bottles can save ₹5000 yearly and reduce your carbon footprint.",
-                icon: <FaLeaf className="text-2xl text-[#429690]" />,
-              },
-            ].map((tip) => (
-              <div
-                key={tip.id}
-                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-green-50 rounded-full flex-shrink-0">
-                    {tip.icon}
+            {loadingTips ? (
+              <Loader />
+            ) : (
+              tips.map((tip) => {
+                let icon = <FaLeaf className="text-2xl text-[#429690]" />;
+                if (tip.id === 1)
+                  icon = <FaSeedling className="text-2xl text-[#429690]" />;
+                else if (tip.id === 2)
+                  icon = <IoEarth className="text-2xl text-[#429690]" />;
+                else if (tip.id === 3)
+                  icon = <FaLeaf className="text-2xl text-[#429690]" />;
+
+                return (
+                  <div
+                    key={tip.id}
+                    className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="p-2 bg-green-50 rounded-full flex-shrink-0">
+                        {icon}
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-sm text-[#2A7C76]">
+                          {tip.title}
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {tip.description}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-sm text-[#2A7C76]">
-                      {tip.title}
-                    </h3>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {tip.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
         </div>
 
