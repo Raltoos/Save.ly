@@ -1,6 +1,16 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const transactionSchema = new mongoose.Schema({
+  id: Number,
+  transaction_title: String,
+  amount: Number,
+  category: String,
+  savingOption: String,
+  savingAmount: Number,
+  date: String,
+});
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -16,6 +26,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Password is required"],
   },
+  transactions: [transactionSchema], 
 });
 
 // Add matchPassword method to compare password hashes

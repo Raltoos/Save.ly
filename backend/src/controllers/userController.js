@@ -34,4 +34,45 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { getUserProfile };
+const getTransactions = async (req, res) => {
+  try {
+    res.status(200).json(req.user.transactions);
+  } catch (err) {
+    console.error("Error fetching transactions:", err);
+    res.status(500).send("Failed to fetch transactions");
+  }
+};
+
+const addTransaction = async (req, res) => {
+  try {
+    const {
+      id,
+      transaction_title,
+      amount,
+      category,
+      savingOption,
+      savingAmount,
+      date,
+    } = req.body;
+
+    const newTx = {
+      id,
+      transaction_title,
+      amount,
+      category,
+      savingOption,
+      savingAmount,
+      date,
+    };
+
+    req.user.transactions.push(newTx);
+    await req.user.save();
+
+    res.status(201).json(req.user.transactions);
+  } catch (err) {
+    console.error("Error adding transaction:", err);
+    res.status(500).send("Failed to add transaction");
+  }
+};
+
+module.exports = { getUserProfile, getTransactions, addTransaction };
